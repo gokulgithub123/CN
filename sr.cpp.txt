@@ -1,0 +1,47 @@
+#include<iostream>
+#include<cstdio>
+#include<ctime>
+#include<vector>
+#include<thread>
+using namespace std;
+
+
+void sendframe(int frameno){
+        cout<<"sendng frames "<<frameno<<endl;
+}
+bool receiveAck(int frameno){
+        return (rand()%10)<8;
+}
+int main(){
+        srand(time(0));
+        int window_size;
+        int total_frames;
+        int base=1;
+        int seqnumber = 1;
+        cout<<"Enter the window size :";
+        cin>>window_size;
+        cout<<"Enter the total frames: ";
+        cin>>total_frames;
+        while(base<=total_frames){
+                for(int i=base;i<seqnumber&&i<=total_frames;i++){
+                        sendframe(i);
+                }
+                for(int i=base;i<seqnumber&&i<= total_frames;i++){
+                        this_thread::sleep_for(chrono::milliseconds(2000));
+                        if(receiveAck(i)){
+                                cout<<"receive ACK for frame "<<i<<endl;
+                                base = i+1;
+                                if(base>total_frames){
+                                        break;
+                                }
+                        }
+                        else{
+                                cout<<"TIMEOUT : retrasmitting frames "<<i<<endl;
+                        }
+                }
+                seqnumber = base + window_size;
+        }
+        cout<<"All frames transmitted sucessfully"<<endl;
+        return 0;
+}
+

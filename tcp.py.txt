@@ -1,0 +1,45 @@
+input.txt
+
+Hello I am Gokul Aravind
+
+
+
+
+tcp_s.py
+
+import socket
+server=socket.socket()
+server_add=('127.0.0.1',12345)
+server.bind(server_add)
+server.listen()
+print("Server listening")
+while True:
+    conn,addr=server.accept()
+    print("Connection Accepted")
+    data=conn.recv(1024).decode('utf-8')
+    fo=open("output.txt","w")
+    print("File Received")
+    fo.write(data)
+    fo.close()
+    conn.close()
+
+
+
+
+tcp_c.py
+
+import socket
+client=socket.socket()
+server_add=('127.0.0.1',12345)
+client.connect(server_add)
+print("Connected to server")
+fi=open("input.txt","r")
+data=fi.read()
+client.send(data.encode('utf-8'))
+print("File sent successfully")
+fi.close()
+client.close()
+print("Connection Closed")
+response=input()
+udpser.sendto(response.encode('utf-8'),client)
+

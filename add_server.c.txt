@@ -1,0 +1,447 @@
+add_ser.cpp
+
+#include <iostream>
+#include <cstring>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <chrono>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include<bits/stdc++.h>
+
+int main() {
+	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocket == -1) {
+		std::cerr << "Error creating socket." << std::endl;
+		return 1;
+	}
+
+	int enableReuse = 1;
+	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &enableReuse, sizeof(int)) == -1) {
+		std::cerr << "Error setting socket options." << std::endl;
+		return 1;
+	}
+
+	struct sockaddr_in serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(1929);
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+		std::cerr << "Error binding." << std::endl;
+		return 1;
+	}
+
+	listen(serverSocket, 1);
+
+	int timeInterval;
+	std::cout << "Enter the time interval (in seconds) for clients to connect: ";
+	std::cin >> timeInterval;
+
+
+	int flags = fcntl(serverSocket, F_GETFL, 0);
+	fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK);
+
+	std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point endTime = startTime + std::chrono::seconds(timeInterval);
+
+	while (std::chrono::steady_clock::now() < endTime) {
+		struct sockaddr_in clientAddr;
+		socklen_t clientAddrSize = sizeof(clientAddr);
+
+		int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrSize);
+
+		if (std::chrono::steady_clock::now() >= endTime) {
+			break;
+		}
+
+		if (clientSocket != -1) {
+			std::cout << "Client connected." << std::endl;
+
+			char buffer[1024];
+			ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+			if (bytesRead > 0) {
+				buffer[bytesRead] = '\0';
+				int sum = 0 ;
+				std:: vector<int> temp ;
+				for(int i=0;i<bytesRead;i++)
+				{
+					if(buffer[i] == ',')
+					{
+						temp.push_back(sum) ;
+						sum = 0 ;
+					}
+					else
+					{
+						int tem = buffer[i]-'0' ;
+						sum     = sum*10 + tem ;
+					}
+
+				}
+				int max_sum = 0 ;
+				for(auto x: temp)
+				{
+					max_sum = max_sum + x ;
+				}
+				max_sum-=1;
+				std::cout << "Received message from client: " << max_sum << std::endl;
+
+				const char* response = "Message received!";
+				send(clientSocket, response, strlen(response), 0);
+			}
+
+			close(clientSocket);
+		}
+	}
+	printf("Terminating the server!!!\n");
+
+	close(serverSocket);
+
+	return 0;
+}
+
+sub_ser.cpp
+
+
+#include <iostream>
+#include <cstring>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <chrono>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <bits/stdc++.h>
+int main() {
+	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocket == -1) {
+		std::cerr << "Error creating socket." << std::endl;
+		return 1;
+	}
+
+	int enableReuse = 1;
+	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &enableReuse, sizeof(int)) == -1) {
+		std::cerr << "Error setting socket options." << std::endl;
+		return 1;
+	}
+
+	struct sockaddr_in serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(1234);
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+		std::cerr << "Error binding." << std::endl;
+		return 1;
+	}
+
+	listen(serverSocket, 1);
+
+	int flags = fcntl(serverSocket, F_GETFL, 0);
+	fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK);
+
+
+
+	while (1) {
+		struct sockaddr_in clientAddr;
+		socklen_t clientAddrSize = sizeof(clientAddr);
+
+		int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrSize);
+
+		if (clientSocket != -1) {
+			std::cout << "Client connected." << std::endl;
+
+			char buffer[1024];
+			ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+			if (bytesRead > 0) {
+				buffer[bytesRead] = '\0';
+				int diff = 0;
+				int sum = 0;
+				std:: vector<int> temp;
+				for(int i=0;i<bytesRead;i++){
+					if(buffer[i] == ','){
+						temp.push_back(sum);
+						sum=0;
+					}
+					else{
+						int tem= buffer[i]-'0';
+						sum=sum*10 +tem;
+					}
+				}
+				diff=abs(temp[1]-temp[2]);
+
+				std::cout << "Received message from client: " << diff << std::endl;
+
+				const char* response = "Message received!";
+				send(clientSocket, response, strlen(response), 0);
+			}
+
+			close(clientSocket);
+		}
+	}
+	printf("Terminating the server!!!\n");
+
+	close(serverSocket);
+
+	return 0;
+}
+
+
+mediate.cpp
+
+
+#include<stdio.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<sys/socket.h>
+#include<string.h>
+#include<unistd.h>
+#include<bits/stdc++.h>
+using namespace std ;
+int main()
+{
+	int sockdesc;
+	struct sockaddr_in servaddr,cliaddr;
+
+	sockdesc=socket(AF_INET,SOCK_STREAM,0);
+	if(sockdesc==-1)
+	{
+		printf("Socket not created");
+		return -1;
+	}
+
+	servaddr.sin_family=AF_INET;
+	servaddr.sin_port=htons(4032);                  // PORT number ranges from 1024 to 49151
+	servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+	if(bind(sockdesc,(struct sockaddr *)&servaddr,sizeof(servaddr)) < 0)
+	{
+		printf("Bind Failed");
+		return -1;
+	}
+
+	if(listen(sockdesc,5)<0)
+	{
+		printf("Listen Failed");
+		return -1;
+	}
+
+
+	while(1)
+	{
+		unsigned int len=sizeof(cliaddr);
+		int connfd=accept(sockdesc,(struct sockaddr*)&cliaddr,&len);
+		if (connfd<0)
+		{
+			printf("Accept failed");
+			return -1;
+		}
+
+
+		char buffer[50];
+		strcpy(buffer," ");
+		read(connfd,buffer,50);
+		printf("Message received from client: %s\n", buffer);
+		fflush(stdout) ;
+		vector<int> temp ;
+		unordered_map<int,int> hash ;
+		int sum = 0 ;
+		for(int i=0;buffer[i] != '\n' ;i++)
+		{
+			if(i == 0 )
+			{
+				int c = buffer[i] - '0' ;
+				temp.push_back(c) ;
+			}
+			else
+			{
+				if(buffer[i] == ',')
+				{
+					temp.push_back(sum) ;
+					sum = 0 ;
+				}
+				else
+				{
+					int t = buffer[i] - '0' ;
+					sum   = sum*10 + t ;
+				}
+			}
+
+		}
+		if(temp[0] == 1 )
+		{
+
+			int num1 = temp[3] ;
+			int num2 = temp[2] ;
+
+
+
+			int clientSocket1 = socket(AF_INET, SOCK_STREAM, 0);
+			if (clientSocket1 == -1) {
+				std::cerr << "Error creating socket." << std::endl;
+				return 1;
+			}
+
+			struct sockaddr_in serverAddr1;
+			serverAddr1.sin_family = AF_INET;
+			serverAddr1.sin_port = htons(1929);
+			serverAddr1.sin_addr.s_addr = INADDR_ANY;
+
+			if (connect(clientSocket1, (struct sockaddr*)&serverAddr1, sizeof(serverAddr1)) == -1) {
+				std::cerr << "Error connecting to server." << std::endl;
+				return 1;
+			}
+
+			std::cout << "Connected to addition  server. num sent: ";
+
+			send(clientSocket1, buffer, sizeof(buffer), 0);
+
+			char buffer1[1024];
+			ssize_t bytesRead = recv(clientSocket1, buffer1, sizeof(buffer1), 0);
+			if (bytesRead > 0) {
+				buffer1[bytesRead] = '\0';
+				std::cout << "Server response: " << buffer1 << std::endl;
+			}
+			else {
+				std::cout << "No response from server." << std::endl;
+			}
+
+
+			close(clientSocket1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		}
+		else
+		{
+			int num1 = temp[3] ;
+			int num2 = temp[2] ;
+
+
+			int clientSocket2 = socket(AF_INET, SOCK_STREAM, 0);
+			if (clientSocket2 == -1) {
+				std::cerr << "Error creating socket." << std::endl;
+				return 1;
+			}
+
+			struct sockaddr_in serverAddr2;
+			serverAddr2.sin_family = AF_INET;
+			serverAddr2.sin_port = htons(1234);
+			serverAddr2.sin_addr.s_addr = INADDR_ANY;
+
+			if (connect(clientSocket2, (struct sockaddr*)&serverAddr2, sizeof(serverAddr2)) == -1) {
+				std::cerr << "Error connecting to server." << std::endl;
+				return 1;
+			}
+
+			std::cout << "Connected to subtraction  server. num sent: ";
+
+			send(clientSocket2, buffer, sizeof(buffer), 0);
+
+			char buffer2[1024];
+			ssize_t bytesRead = recv(clientSocket2, buffer2, sizeof(buffer2), 0);
+			if (bytesRead > 0) {
+				buffer2[bytesRead] = '\0';
+				std::cout << "Server response: " << buffer2 << std::endl;
+			}
+			else {
+				std::cout << "No response from server." << std::endl;
+			}
+
+
+			close(clientSocket2);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		}
+
+
+		printf("answer is %s",buffer) ;
+		fflush(stdout) ;
+		write(connfd,buffer,sizeof(buffer));
+
+
+	}
+
+	close(sockdesc);
+
+
+
+	return 0;
+}
+
+
+client.cpp
+
+
+#include<stdio.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<sys/socket.h>
+#include<string.h>
+#include<unistd.h>
+#include<bits/stdc++.h>
+int main()
+{
+        int sockdesc;
+        struct sockaddr_in servaddr;
+        sockdesc=socket(AF_INET,SOCK_STREAM,0);
+        if(sockdesc==-1)
+        {
+                printf("Socket not created");
+                return -1;
+        }
+
+        servaddr.sin_family=AF_INET;
+        servaddr.sin_port=htons(4032);
+        servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+
+        if (connect(sockdesc,(struct sockaddr*)&servaddr,sizeof(servaddr)) < 0)
+        {
+                printf("Connect Failed");
+                return -1;
+        }
+
+        char buffer[50];
+        fgets(buffer,sizeof(buffer),stdin);
+        write(sockdesc,buffer,sizeof(buffer));
+
+        read(sockdesc,buffer,50);
+        printf("Message from server: %s", buffer);
+        write(sockdesc,buffer,sizeof(buffer)) ;
+
+        close(sockdesc);
+        return 0;
+
+}
+
+
